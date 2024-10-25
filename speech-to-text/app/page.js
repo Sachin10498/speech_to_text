@@ -138,7 +138,6 @@ export default function HomePage() {
         bgcolor: "#f5f5f5",
         minHeight: "100vh",
         padding: 4,
-        minWidth: "80vw",
       }}
     >
       <Box
