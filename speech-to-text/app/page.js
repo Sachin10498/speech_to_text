@@ -39,12 +39,10 @@ export default function HomePage() {
     setTranscript("");
     setIsRecording(true);
     setIsPaused(false);
-    setInstructionText("Wait for 2 seconds..."); // Set initial instruction text
+    setInstructionText("Wait for few seconds...");
 
     const queryParam =
-      language === "hinglish"
-        ? "languages=hi,en" // Set to both Hindi and English for Hinglish
-        : `language=${language}`;
+      language === "hinglish" ? "languages=hi,en" : `language=${language}`;
 
     const deepgramSocket = new WebSocket(
       `wss://api.deepgram.com/v1/listen?punctuate=true&${queryParam}`,
@@ -70,10 +68,9 @@ export default function HomePage() {
 
       mediaRecorder.start(250);
 
-      // Set instruction text after 2 seconds
       setTimeout(() => {
         setInstructionText("Now start speaking...");
-      }, 2000); // 2000 milliseconds = 2 seconds
+      }, 2000);
     };
 
     deepgramSocket.onmessage = (message) => {
@@ -108,7 +105,7 @@ export default function HomePage() {
     recorderRef.current?.stop();
     audioRef.current?.getTracks().forEach((track) => track.stop());
     wsRef.current?.close();
-    setInstructionText(""); // Clear instruction text when stopping
+    setInstructionText("");
   };
 
   useEffect(() => {
@@ -120,9 +117,9 @@ export default function HomePage() {
   }, []);
 
   const languages = [
-    { code: "en", name: "English" },
-    { code: "hi", name: "Hindi" },
     { code: "hinglish", name: "Hinglish (Hindi + English)" },
+    { code: "hi", name: "Hindi" },
+    { code: "en", name: "English" },
     { code: "es", name: "Spanish" },
     { code: "fr", name: "French" },
     { code: "de", name: "German" },
@@ -136,144 +133,153 @@ export default function HomePage() {
   return (
     <Box
       sx={{
-        mt: 5,
+        mt: 2,
         textAlign: "center",
-        bgcolor: "#e3f2fd",
+        bgcolor: "#f5f5f5",
         minHeight: "100vh",
         padding: 4,
-        borderRadius: 2,
-        boxShadow: 4,
+        minWidth: "80vw",
       }}
     >
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{ fontWeight: "bold", color: "#4A4A4A" }}
+      <Box
+        sx={{
+          bgcolor: "#e3f2fd", // Inner box color
+          minHeight: "100vh",
+          padding: 4,
+          borderRadius: 2,
+          boxShadow: 4,
+        }}
       >
-        Speech-to-Text
-      </Typography>
-
-      <Typography variant="body1" sx={{ color: "#555", marginBottom: 2 }}>
-        {instructionText}
-      </Typography>
-
-      <FormControl sx={{ marginBottom: 3, minWidth: 200 }}>
-        <InputLabel id="language-select-label">Language</InputLabel>
-        <Select
-          labelId="language-select-label"
-          value={language}
-          onChange={handleLanguageChange}
-          sx={{
-            bgcolor: "#ffffff", // White background for the select
-            borderRadius: 2,
-            "& .MuiOutlinedInput-root": {
-              "& fieldset": {
-                borderColor: "#d1d1d1",
-              },
-              "&:hover fieldset": {
-                borderColor: "#b0b0b0",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "#4A90E2",
-              },
-            },
-          }}
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ fontWeight: "bold", color: "#4A4A4A" }}
         >
-          {languages.map((lang) => (
-            <MenuItem key={lang.code} value={lang.code}>
-              {lang.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          Real-time Speech-to-Text
+        </Typography>
 
-      <Stack
-        direction="row"
-        spacing={2}
-        justifyContent="center"
-        sx={{ marginBottom: 3 }}
-      >
-        {!isRecording && (
-          <IconButton
-            onClick={handleStartRecording}
-            aria-label="start recording"
+        <Typography variant="body1" sx={{ color: "#555", marginBottom: 2 }}>
+          {instructionText}
+        </Typography>
+
+        <FormControl sx={{ marginBottom: 3, minWidth: 200 }}>
+          <InputLabel id="language-select-label">Language</InputLabel>
+          <Select
+            labelId="language-select-label"
+            value={language}
+            onChange={handleLanguageChange}
             sx={{
-              bgcolor: "#4A90E2",
-              color: "#fff",
-              "&:hover": { bgcolor: "#0079c1" },
+              bgcolor: "#ffffff",
               borderRadius: 2,
-              boxShadow: 2,
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "#d1d1d1",
+                },
+                "&:hover fieldset": {
+                  borderColor: "#b0b0b0",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#4A90E2",
+                },
+              },
             }}
           >
-            <MicIcon />
-          </IconButton>
-        )}
+            {languages.map((lang) => (
+              <MenuItem key={lang.code} value={lang.code}>
+                {lang.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-        {isRecording && !isPaused && (
-          <IconButton
-            onClick={handlePauseRecording}
-            aria-label="pause recording"
-            sx={{
-              bgcolor: "#ff9800",
-              color: "#fff",
-              "&:hover": { bgcolor: "#f57c00" },
-              borderRadius: 2,
-              boxShadow: 2,
-            }}
-          >
-            <PauseIcon />
-          </IconButton>
-        )}
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent="center"
+          sx={{ marginBottom: 3 }}
+        >
+          {!isRecording && (
+            <IconButton
+              onClick={handleStartRecording}
+              aria-label="start recording"
+              sx={{
+                bgcolor: "#4A90E2",
+                color: "#fff",
+                "&:hover": { bgcolor: "#0079c1" },
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <MicIcon />
+            </IconButton>
+          )}
 
-        {isPaused && (
-          <IconButton
-            onClick={handleResumeRecording}
-            aria-label="resume recording"
-            sx={{
-              bgcolor: "#4caf50",
-              color: "#fff",
-              "&:hover": { bgcolor: "#388e3c" },
-              borderRadius: 2,
-              boxShadow: 2,
-            }}
-          >
-            <PlayArrowIcon />
-          </IconButton>
-        )}
+          {isRecording && !isPaused && (
+            <IconButton
+              onClick={handlePauseRecording}
+              aria-label="pause recording"
+              sx={{
+                bgcolor: "#ff9800",
+                color: "#fff",
+                "&:hover": { bgcolor: "#f57c00" },
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <PauseIcon />
+            </IconButton>
+          )}
 
-        {isRecording && (
-          <IconButton
-            onClick={handleStopRecording}
-            aria-label="stop recording"
-            sx={{
-              bgcolor: "#f44336",
-              color: "#fff",
-              "&:hover": { bgcolor: "#d32f2f" },
-              borderRadius: 2,
-              boxShadow: 2,
-            }}
-          >
-            <StopIcon />
-          </IconButton>
-        )}
-      </Stack>
+          {isPaused && (
+            <IconButton
+              onClick={handleResumeRecording}
+              aria-label="resume recording"
+              sx={{
+                bgcolor: "#4caf50",
+                color: "#fff",
+                "&:hover": { bgcolor: "#388e3c" },
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <PlayArrowIcon />
+            </IconButton>
+          )}
 
-      <Divider sx={{ marginBottom: 3 }} />
+          {isRecording && (
+            <IconButton
+              onClick={handleStopRecording}
+              aria-label="stop recording"
+              sx={{
+                bgcolor: "#f44336",
+                color: "#fff",
+                "&:hover": { bgcolor: "#d32f2f" },
+                borderRadius: 2,
+                boxShadow: 2,
+              }}
+            >
+              <StopIcon />
+            </IconButton>
+          )}
+        </Stack>
 
-      <Card sx={{ marginTop: 2, borderRadius: 2, boxShadow: 3 }}>
-        <CardContent>
-          <Typography
-            variant="h6"
-            gutterBottom
-            sx={{ fontWeight: "bold", color: "#4A4A4A" }}
-          >
-            Transcription
-          </Typography>
-          <Typography variant="body1" sx={{ color: "#555" }}>
-            {transcript || "Speak to see text..."}
-          </Typography>
-        </CardContent>
-      </Card>
+        <Divider sx={{ marginBottom: 3 }} />
+
+        <Card sx={{ marginTop: 2, borderRadius: 2, boxShadow: 3 }}>
+          <CardContent>
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{ fontWeight: "bold", color: "#4A4A4A" }}
+            >
+              Transcription
+            </Typography>
+            <Typography variant="body1" sx={{ color: "#555" }}>
+              {transcript || "Speak to see text..."}
+            </Typography>
+          </CardContent>
+        </Card>
+      </Box>
     </Box>
   );
 }
