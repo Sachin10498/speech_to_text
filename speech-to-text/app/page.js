@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
+  Button,
   Typography,
   Box,
   Card,
@@ -18,16 +19,22 @@ import MicIcon from "@mui/icons-material/Mic";
 import StopIcon from "@mui/icons-material/Stop";
 import PauseIcon from "@mui/icons-material/Pause";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import AudiotrackIcon from "@mui/icons-material/Audiotrack";
 
 export default function HomePage() {
   const [transcript, setTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [language, setLanguage] = useState("en");
-  const [instructionText, setInstructionText] = useState(""); // New state for instruction text
+  const [language, setLanguage] = useState("");
+  const [instructionText, setInstructionText] = useState("");
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [audioURL, setAudioURL] = useState(null); // New: Store audio URL for playback
+
   const audioRef = useRef(null);
   const wsRef = useRef(null);
   const recorderRef = useRef(null);
+  const audioChunksRef = useRef([]); // New: Store audio chunks
 
   const DEEPGRAM_API_KEY = process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY;
 
@@ -35,11 +42,18 @@ export default function HomePage() {
     setLanguage(event.target.value);
   };
 
+  const handleCopyTranscript = () => {
+    navigator.clipboard.writeText(transcript).then(() => {
+      setCopySuccess(true);
+    });
+  };
+
   const handleStartRecording = async () => {
     setTranscript("");
     setIsRecording(true);
     setIsPaused(false);
-    setInstructionText("Wait for few seconds...");
+    setInstructionText("Wait for a few seconds...");
+    audioChunksRef.current = []; // Reset audio chunks
 
     const queryParam =
       language === "hinglish" ? "languages=hi,en" : `language=${language}`;
@@ -64,6 +78,7 @@ export default function HomePage() {
         if (deepgramSocket.readyState === WebSocket.OPEN) {
           deepgramSocket.send(event.data);
         }
+        audioChunksRef.current.push(event.data); // Store audio chunks
       };
 
       mediaRecorder.start(250);
@@ -106,6 +121,11 @@ export default function HomePage() {
     audioRef.current?.getTracks().forEach((track) => track.stop());
     wsRef.current?.close();
     setInstructionText("");
+
+    // Create a Blob from audio chunks and generate a URL
+    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+    const url = URL.createObjectURL(audioBlob);
+    setAudioURL(url); // Set audio URL for playback
   };
 
   useEffect(() => {
@@ -117,7 +137,6 @@ export default function HomePage() {
   }, []);
 
   const languages = [
-    { code: "hinglish", name: "Hinglish (Hindi + English)" },
     { code: "hi", name: "Hindi" },
     { code: "en", name: "English" },
     { code: "es", name: "Spanish" },
@@ -138,15 +157,18 @@ export default function HomePage() {
         bgcolor: "#f5f5f5",
         minHeight: "100vh",
         padding: 4,
+        display: "flex",
+        justifyContent: "center",
       }}
     >
       <Box
         sx={{
-          bgcolor: "#e3f2fd", // Inner box color
+          bgcolor: "#e3f2fd",
           minHeight: "100vh",
           padding: 4,
           borderRadius: 2,
           boxShadow: 4,
+          width: "80%",
         }}
       >
         <Typography
@@ -154,7 +176,7 @@ export default function HomePage() {
           gutterBottom
           sx={{ fontWeight: "bold", color: "#4A4A4A" }}
         >
-          Real-time Speech-to-Text
+          Speech-to-Text
         </Typography>
 
         <Typography variant="body1" sx={{ color: "#555", marginBottom: 2 }}>
@@ -162,27 +184,20 @@ export default function HomePage() {
         </Typography>
 
         <FormControl sx={{ marginBottom: 3, minWidth: 200 }}>
-          <InputLabel id="language-select-label">Language</InputLabel>
+          <InputLabel id="language-select-label"></InputLabel>
           <Select
             labelId="language-select-label"
             value={language}
             onChange={handleLanguageChange}
+            displayEmpty
             sx={{
               bgcolor: "#ffffff",
               borderRadius: 2,
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderColor: "#d1d1d1",
-                },
-                "&:hover fieldset": {
-                  borderColor: "#b0b0b0",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#4A90E2",
-                },
-              },
             }}
           >
+            <MenuItem disabled value="">
+              <em>Select a Language</em>
+            </MenuItem>
             {languages.map((lang) => (
               <MenuItem key={lang.code} value={lang.code}>
                 {lang.name}
@@ -200,62 +215,31 @@ export default function HomePage() {
           {!isRecording && (
             <IconButton
               onClick={handleStartRecording}
-              aria-label="start recording"
-              sx={{
-                bgcolor: "#4A90E2",
-                color: "#fff",
-                "&:hover": { bgcolor: "#0079c1" },
-                borderRadius: 2,
-                boxShadow: 2,
-              }}
+              sx={{ bgcolor: "#4A90E2", color: "#fff" }}
             >
               <MicIcon />
             </IconButton>
           )}
-
           {isRecording && !isPaused && (
             <IconButton
               onClick={handlePauseRecording}
-              aria-label="pause recording"
-              sx={{
-                bgcolor: "#ff9800",
-                color: "#fff",
-                "&:hover": { bgcolor: "#f57c00" },
-                borderRadius: 2,
-                boxShadow: 2,
-              }}
+              sx={{ bgcolor: "#ff9800", color: "#fff" }}
             >
               <PauseIcon />
             </IconButton>
           )}
-
           {isPaused && (
             <IconButton
               onClick={handleResumeRecording}
-              aria-label="resume recording"
-              sx={{
-                bgcolor: "#4caf50",
-                color: "#fff",
-                "&:hover": { bgcolor: "#388e3c" },
-                borderRadius: 2,
-                boxShadow: 2,
-              }}
+              sx={{ bgcolor: "#4caf50", color: "#fff" }}
             >
               <PlayArrowIcon />
             </IconButton>
           )}
-
           {isRecording && (
             <IconButton
               onClick={handleStopRecording}
-              aria-label="stop recording"
-              sx={{
-                bgcolor: "#f44336",
-                color: "#fff",
-                "&:hover": { bgcolor: "#d32f2f" },
-                borderRadius: 2,
-                boxShadow: 2,
-              }}
+              sx={{ bgcolor: "#f44336", color: "#fff" }}
             >
               <StopIcon />
             </IconButton>
@@ -278,6 +262,10 @@ export default function HomePage() {
             </Typography>
           </CardContent>
         </Card>
+
+        {audioURL && (
+          <audio controls src={audioURL} style={{ marginTop: 20 }} />
+        )}
       </Box>
     </Box>
   );
